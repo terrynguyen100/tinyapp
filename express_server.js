@@ -48,12 +48,7 @@ app.post("/urls", (req, res) => {
   }
 });
 
-//DELETE
-app.post('/urls/:id/delete', (req, res) => {
-  const id = req.params.id;
-  delete urlDatabase[id];
-  res.redirect('/urls');
-});
+
 
 //this route needs to be above /urls/:id because if put below, Express
 // will think that new is a route paramter
@@ -65,6 +60,23 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
+
+//DELETE
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id;
+  delete urlDatabase[id];
+  res.redirect('/urls');
+});
+
+
+//UPDATE
+app.post('/urls/:id/update', (req, res) => {
+  const id = req.params.id;
+  const longURL = req.body.longURL;
+  urlDatabase[id] = longURL;
+  res.redirect('/urls');
+});
+
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
