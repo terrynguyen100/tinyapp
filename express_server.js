@@ -2,9 +2,10 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
+//middleware
 //This tells the Express app to use EJS as its templating engine
 app.set("view engine", "ejs");
-//before all the routes to
+//before all the routes
 app.use(express.urlencoded({ extended: true }));
 
 //return a random 6 chars string (number and/or letter) that is not already in urlDatabase
@@ -44,7 +45,7 @@ app.post("/urls", (req, res) => {
     urlDatabase[id] = req.body.longURL;
     res.redirect(`urls/${id}`);
   } else {
-    res.send('Link already exist in database');
+    res.send('Link already exist in database. Go back.');
   }
 });
 
