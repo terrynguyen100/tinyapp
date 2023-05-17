@@ -46,7 +46,13 @@ app.post("/urls", (req, res) => {
   } else {
     res.send('Link already exist in database');
   }
-  
+});
+
+//DELETE
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id;
+  delete urlDatabase[id];
+  res.redirect('/urls');
 });
 
 //this route needs to be above /urls/:id because if put below, Express
