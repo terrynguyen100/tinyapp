@@ -7,6 +7,7 @@ app.set("view engine", "ejs");
 //before all the routes to
 app.use(express.urlencoded({ extended: true }));
 
+//return a random 6 chars string (number and/or letter) that is not already in urlDatabase
 function generateUniqueRandomID() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let shortURL = '';
@@ -61,7 +62,7 @@ app.get("/urls/:id", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
-  //const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  //BUG: longURl has to has http:// or https://. If not, redirect too many times error will show
   res.redirect(longURL);
 });
 
@@ -70,9 +71,9 @@ app.get("/urls.json", (req, res) => {
 });
 
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
