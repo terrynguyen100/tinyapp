@@ -1,11 +1,11 @@
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
+const cookieParser = require('cookie-parser');
+const PORT = 8080;
 
-//middleware
 //This tells the Express app to use EJS as its templating engine
 app.set("view engine", "ejs");
-//before all the routes
+//before all the routes to
 app.use(express.urlencoded({ extended: true }));
 
 //return a random 6 chars string (number and/or letter) that is not already in urlDatabase
@@ -33,7 +33,10 @@ app.get("/", (req, res) => {
 });
 
 app.get( "/urls", (req, res) => {
-  const templateVars = {urls: urlDatabase};
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies['username']
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -54,11 +57,18 @@ app.post("/urls", (req, res) => {
 //this route needs to be above /urls/:id because if put below, Express
 // will think that new is a route paramter
 app.get('/urls/new', (req, res) => {
-  res.render('urls_new');
+  const templateVars = {
+    username: req.cookies['username']
+  };
+  res.render('urls_new', templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { 
+    id: req.params.id, 
+    longURL: urlDatabase[req.params.id],
+    username: req.cookies['username']
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -78,17 +88,27 @@ app.post('/urls/:id/update', (req, res) => {
   res.redirect('/urls');
 });
 
-
+//to redirect to the long URL
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   //BUG: longURl has to has http:// or https://. If not, redirect too many times error will show
   res.redirect(longURL);
 });
 
+//to view the json file of all links
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+app.post("/login", (req, res) => {
+  res.cookie('username', req.body.username);
+  res.redirect('/urls');
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie('username');
+  res.redirect('/urls');
+});
 
 // app.get("/hello", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
