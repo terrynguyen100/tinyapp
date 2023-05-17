@@ -1,9 +1,12 @@
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
+const cookieParser = require('cookie-parser');
+const PORT = 8080;
 
+//Middleware
 //This tells the Express app to use EJS as its templating engine
 app.set("view engine", "ejs");
+app.use(cookieParser());
 //before all the routes to
 app.use(express.urlencoded({ extended: true }));
 
@@ -32,7 +35,10 @@ app.get("/", (req, res) => {
 });
 
 app.get( "/urls", (req, res) => {
-  const templateVars = {urls: urlDatabase};
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies['username']
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -93,6 +99,9 @@ app.post("/login", (req, res) => {
   res.cookie('username', req.body.username);
   res.redirect('/urls');
 });
+
+
+
 // app.get("/hello", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 // });
