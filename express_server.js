@@ -5,6 +5,7 @@ const PORT = 8080;
 
 //This tells the Express app to use EJS as its templating engine
 app.set("view engine", "ejs");
+app.use(cookieParser());
 //before all the routes to
 app.use(express.urlencoded({ extended: true }));
 
