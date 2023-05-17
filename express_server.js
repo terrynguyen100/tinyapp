@@ -77,18 +77,22 @@ app.post('/urls/:id/update', (req, res) => {
   res.redirect('/urls');
 });
 
-
+//to redirect to the long URL
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   //BUG: longURl has to has http:// or https://. If not, redirect too many times error will show
   res.redirect(longURL);
 });
 
+//to view the json file of all links
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-
+app.post("/login", (req, res) => {
+  res.cookie('username', req.body.username);
+  res.redirect('/urls');
+});
 // app.get("/hello", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 // });
