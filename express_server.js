@@ -7,20 +7,19 @@ app.set("view engine", "ejs");
 //before all the routes to
 app.use(express.urlencoded({ extended: true }));
 
-function generateRandomString () {
+function generateUniqueRandomID() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < 6; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    result += characters.charAt(randomIndex);
-  }
+  let shortURL = '';
 
-  return result;
-};
-
-var randomString = generateRandomString();
-console.log(randomString);
-
+  while (urlDatabase[shortURL] || shortURL === '') {
+    shortURL = '';
+    for (let i = 0; i < 6; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      shortURL += characters.charAt(randomIndex);
+    }
+  } 
+  return shortURL;
+}
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -37,9 +36,18 @@ app.get( "/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  // the if to check if the input url has already exist in urlDatabase
+  if (!Object.values(urlDatabase).includes(req.body.longURL)) {
+    const id = generateUniqueRandomID();
+    
+    urlDatabase[id] = req.body.longURL;
+    res.redirect(`urls/${id}`);
+  } else {
+    res.send('Link already exist in database');
+  }
+  
 });
+
 //this route needs to be above /urls/:id because if put below, Express
 // will think that new is a route paramter
 app.get('/urls/new', (req, res) => {
@@ -49,6 +57,12 @@ app.get('/urls/new', (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
+});
+
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  //const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  res.redirect(longURL);
 });
 
 app.get("/urls.json", (req, res) => {
