@@ -55,12 +55,12 @@ const urlDatabase = {
 
 const users = {
   aaa: {
-    id: "aaa",
+    userId: "aaa",
     email: "a@a.com",
     password: "aaa",
   },
   bbb: {
-    id: "bbb",
+    userId: "bbb",
     email: "b@b.com",
     password: "bbb",
   },
@@ -74,7 +74,7 @@ app.get("/", (req, res) => {
 app.get( "/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: req.cookies['user']
+    user: users[req.cookies['userId']]
   };
   res.render("urls_index", templateVars);
 });
@@ -99,7 +99,7 @@ app.post("/urls", (req, res) => {
 // will think that new is a route paramter
 app.get('/urls/new', (req, res) => {
   const templateVars = {
-    user: req.cookies['user']
+    user: users[req.cookies['userId']]
   };
   res.render('urls_new', templateVars);
 });
@@ -108,7 +108,7 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { 
     id: req.params.id, 
     longURL: urlDatabase[req.params.id],
-    user: req.cookies['user']
+    user: users[req.cookies['userId']]
   };
   res.render("urls_show", templateVars);
 });
@@ -144,7 +144,7 @@ app.get("/urls.json", (req, res) => {
 //--------------LOG IN - LOG OUT - REGISTRATION---------------
 app.get("/login", (req, res) => {
   templateVars = {
-    user: req.cookies['user']
+    user: users[req.cookies['userId']]
   };
 
   res.render('login', templateVars);
@@ -163,21 +163,20 @@ app.post("/login", (req, res) => {
     } else if (user.password !== password) {
         res.status(403).send('403: Email is correct but wrong password!');
     } else {
-        res.cookie('user', user);
+        res.cookie('userId', user['userId']);
+        res.redirect('/urls');
     }
   }
-  //res.cookie('email', req.body.email);
-  res.redirect('/urls');
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('user');
+  res.clearCookie('userId');
   res.redirect('/login');
 });
 
 app.get( "/register", (req, res) => {
   const templateVars = {
-    user: req.cookies['user']
+    user: users[req.cookies['userId']]
   };
   res.render("register", templateVars);
 });
@@ -194,11 +193,11 @@ app.post( "/register", (req, res) => {
   } else {
       const userId = generateRandomUserId();
       users[userId] = {
-        id: userId,
+        userId: userId,
         email: email,
         password: password
       }
-      res.cookie('user', users[userId]);
+      res.cookie('userId', userId);
       res.redirect("/urls");
   }
 });
