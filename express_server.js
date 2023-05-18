@@ -12,12 +12,12 @@ const {
   longURLExisted,
   randomizeUniqueUserId,
   randomizeUniqueShortURL,
-  } = require ('./helpers');
+} = require('./helpers');
 
 //---------MIDDLEWARE--------
 app.set('view engine', 'ejs');
 app.use(morgan('dev'));
-app.use(express.urlencoded({ extended: false })); //extended = true means the cookies can send higher form of variables, instead of just literals
+app.use(express.urlencoded({ extended: false })); 
 app.use(cookieSession({
   name: 'notMyCookie',
   keys: ['SuP3r$ecr3tC0dE!']
@@ -67,16 +67,9 @@ app.get('/', (req, res) => {
 
 app.get('/urls', (req, res) => {
   const userId = req.session['userId'];
-
-  // if (!users[userId]) {
-  //   console.log('this userId in cookie does not exist in database. Proceed to clear cookie');
-  //   res.clearCookie('userId');
-  //   //When server reset, the database is reset. If cookie[userId] does not exist in database, clear the cookie
-  // }
-
   if (userId && users[userId]) {
     const templateVars = {
-      urls: urlsForUser(userId, urlDatabase), //filter only the urls belong to this cookies[userId]
+      urls: urlsForUser(userId, urlDatabase),
       user: users[req.session['userId']]
     };
     res.render('urls_index', templateVars);
@@ -97,7 +90,8 @@ app.post('/urls', (req, res) => {
     return res.status(400).send('URL cannot be empty');
   }
   //checks if longURL already exist
-  const longURL = req.body.longURL.trim(); //without trimming, same url with extra spaces are considered as equivalent
+  //without trimming, same url with extra spaces are considered as equivalent
+  const longURL = req.body.longURL.trim(); 
   if (longURLExisted(longURL, urlDatabase)) {
     return res.send('Link already exist in database.');
   }
@@ -113,12 +107,6 @@ app.post('/urls', (req, res) => {
 //urls/new needs to be before urls/:id. Otherwise 'new' will be mistook as :id
 app.get('/urls/new', (req, res) => {
   const userId = req.session['userId'];
-
-  // if (!users[userId]) {
-  //   console.log('this userId in cookie does not exist in database. Proceed to clear cookie');
-  //   res.clearCookie('userId');
-  //   //When server reset, the database is reset. If cookie[userId] does not exist in database, clear the cookie
-  // }
 
   if (userId && users[userId]) {
     const templateVars = {user: users[userId]};

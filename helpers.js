@@ -54,5 +54,5 @@ module.exports = {
   urlsForUser,
   longURLExisted,
   randomizeUniqueUserId,
-  randomizeUniqueShortURL  
+  randomizeUniqueShortURL
 };
