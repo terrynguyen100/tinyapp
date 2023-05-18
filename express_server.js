@@ -9,26 +9,54 @@ app.use(cookieParser());
 //before all the routes to
 app.use(express.urlencoded({ extended: true }));
 
-//return a random 6 chars string (number and/or letter) that is not already in urlDatabase
-function generateUniqueRandomID() {
+//--------FUNCTION--------
+//return a random ${length} chars string (number and/or letter)
+function generateRandomStr (length) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let shortURL = '';
-
-  while (urlDatabase[shortURL] || shortURL === '') {
-    shortURL = '';
-    for (let i = 0; i < 6; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      shortURL += characters.charAt(randomIndex);
-    }
-  } 
-  return shortURL;
+  let randomStr = '';
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    randomStr += characters.charAt(randomIndex);
+  }
+  return randomStr;
 }
 
+function generateRandomShortURL () {
+  let shortURL = '';
+  while (urlDatabase[shortURL] || shortURL === '') {
+    shortURL = generateRandomStr(6);
+  }
+  return shortURL; 
+};
+
+function generateRandomUserId () {
+  let userId = '';
+  while (users[userId] || userId === '') {
+    userId = generateRandomStr(3);
+  }
+  return userId; 
+};
+
+//--------DATABASE----------------
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+  aaa: {
+    id: "aaa",
+    email: "a@a.com",
+    password: "aaa",
+  },
+  bbb: {
+    id: "bbb",
+    email: "b@b.com",
+    password: "bbb",
+  },
+};
+
+//------------------ROUTE------------------
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -36,7 +64,7 @@ app.get("/", (req, res) => {
 app.get( "/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies['username']
+    user: req.cookies['user']
   };
   res.render("urls_index", templateVars);
 });
@@ -44,7 +72,7 @@ app.get( "/urls", (req, res) => {
 app.post("/urls", (req, res) => {
   // the if to check if the input url has already exist in urlDatabase
   if (!Object.values(urlDatabase).includes(req.body.longURL)) {
-    const id = generateUniqueRandomID();
+    const id = generateRandomShortURL();
     
     urlDatabase[id] = req.body.longURL;
     res.redirect(`urls/${id}`);
@@ -59,7 +87,7 @@ app.post("/urls", (req, res) => {
 // will think that new is a route paramter
 app.get('/urls/new', (req, res) => {
   const templateVars = {
-    username: req.cookies['username']
+    user: req.cookies['user']
   };
   res.render('urls_new', templateVars);
 });
@@ -68,7 +96,7 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { 
     id: req.params.id, 
     longURL: urlDatabase[req.params.id],
-    username: req.cookies['username']
+    user: req.cookies['user']
   };
   res.render("urls_show", templateVars);
 });
@@ -101,22 +129,45 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//--------------LOG IN - LOG OUT - REGISTRATION---------------
 app.post("/login", (req, res) => {
-  res.cookie('username', req.body.username);
+  //res.cookie('email', req.body.email);
   res.redirect('/urls');
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user');
   res.redirect('/urls');
 });
 
 app.get( "/register", (req, res) => {
   const templateVars = {
-    username: req.cookies['username']
+    user: req.cookies['user']
   };
   res.render("register", templateVars);
 });
+
+//when click Register button on /register
+app.post( "/register", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (email && password) {
+    const userId = generateRandomUserId();
+    users[userId] = {
+      id: userId,
+      email: email,
+      password: password
+    }
+    res.cookie('user', users[userId]);
+  
+    res.redirect("/urls");
+  } else {
+    console.log("Provide email and password!")
+    //QUESTION: what to put here to not refresh the page and not redirect
+  }
+});
+
 // app.get("/hello", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 // });
