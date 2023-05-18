@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
+const bcrypt = require('bcryptjs');
 const PORT = 8080;
 
 //---------MIDDLEWARE--------
@@ -35,7 +36,6 @@ function randomizeUniqueUserId() {
   }
   return userId;
 }
-
 function emailExisted(email) {
   //return false if email not exist in database
   //return the entire user if email exist
@@ -45,7 +45,6 @@ function emailExisted(email) {
   }
   return false;
 }
-
 function longURLExisted(longURL) {
   for (let key in urlDatabase) {
     if (urlDatabase[key].longURL === longURL)
@@ -53,7 +52,6 @@ function longURLExisted(longURL) {
   }
   return false;
 }
-
 function urlsForUser(id) {
   const filteredURLs = {};
   for (let key in urlDatabase) {
@@ -85,12 +83,12 @@ const users = {
   aaa: {
     userId: 'aaa',
     email: 'a@a.com',
-    password: 'aaa',
+    password: bcrypt.hashSync('aaa', 10)
   },
   bbb: {
     userId: 'bbb',
     email: 'b@b.com',
-    password: 'bbb',
+    password: bcrypt.hashSync('bbb', 10)
   },
 };
 
@@ -282,7 +280,7 @@ app.post('/login', (req, res) => {
     return res.status(403).send('403: There is no account registered with this email!');
   }
   //check if password matchs
-  if (user.password !== password) {
+  if (!bcrypt.compareSync(password, user.password)) {
     return res.status(403).send('403: Email is correct but password do not match');
   }
   //passed all checks, login
@@ -302,7 +300,6 @@ app.get('/register', (req, res) => {
   }
 });
 
-//when click Register button on /register
 app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -316,10 +313,11 @@ app.post('/register', (req, res) => {
     return res.status(400).send('This email already used before.');
   } 
   const userId = randomizeUniqueUserId();
+  const hashedPass = bcrypt.hashSync(password, 10);
   users[userId] = {
     userId: userId,
     email: email,
-    password: password
+    password: hashedPass
   };
   console.log('Added new user: ', users);
   res.cookie('userId', userId);
