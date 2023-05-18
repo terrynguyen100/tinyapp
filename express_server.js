@@ -80,8 +80,10 @@ app.get( "/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  // the if to check if the input url has already exist in urlDatabase
-  if (!Object.values(urlDatabase).includes(req.body.longURL)) {
+  const longURL = req.body.longURL;
+  if (!longURL) {
+    res.status(400).send('URL cannot be empty');
+  } else if (!Object.values(urlDatabase).includes(req.body.longURL)) {
     const id = generateRandomShortURL();
     
     urlDatabase[id] = req.body.longURL;
@@ -148,30 +150,29 @@ app.get("/login", (req, res) => {
   res.render('login', templateVars);
 });
 
-// app.post("/login", (req, res) => {
-//   const email = req.body.email;
-//   const password = req.body.password;
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
 
-//   if (!email || !password) {
-//     res.status(400).send('Email and Password cannot be blank!');
-//   } else {
-//     const user = emailExisted(email);
-//     if (!user) {
-//       //wrong email
-//       res.status(401).send('401: There is no account registered with this email!');
-//     } else if (user.password !== password) {
-//         res.status(401).send('401: Email is correct but wrong password!');
-//     } else {
-//         res.cookie('user', user);
-//     }
-//   }
-//   //res.cookie('email', req.body.email);
-//   res.redirect('/urls');
-// });
+  if (!email || !password) {
+    res.status(400).send('Email and Password cannot be blank!');
+  } else {
+    const user = emailExisted(email);
+    if (!user) {
+      res.status(403).send('403: There is no account registered with this email!');
+    } else if (user.password !== password) {
+        res.status(403).send('403: Email is correct but wrong password!');
+    } else {
+        res.cookie('user', user);
+    }
+  }
+  //res.cookie('email', req.body.email);
+  res.redirect('/urls');
+});
 
 app.post("/logout", (req, res) => {
   res.clearCookie('user');
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
 app.get( "/register", (req, res) => {

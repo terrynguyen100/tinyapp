@@ -20,16 +20,16 @@
     </div>
     <% if (user) { %>
       <form method="POST" action="/logout" class="form-inline">
-        <label for="loggedin">Logged in as: <%= user.email%></label>
-        <button type="submit" class="btn btn-outline-dark">Logout</button>
+        <label for="loggedin">Logged In As: <%= user.email%>!</label>
+        <button type="submit" class="btn btn-outline-dark" style="margin-left: 10px">Logout</button>
       </form>
     <%} else { %>
-      <form method="GET" action="/login" class="form-inline">
-        <button type="submit" class="btn btn-outline-dark">Login</button>
-      </form>
-      <form method="GET" action="/register" class="form-inline">
-        <button type="submit" class="btn btn-outline-dark">Register</button>
-      </form>
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="navbar-nav ml-auto">
+          <a class="nav-item nav-link" href="/login">Login</a>
+          <a class="nav-item nav-link" href="/register">Register</a>
+        </div>
+      </div>
     <% }%>
     
   </nav>
