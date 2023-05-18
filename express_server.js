@@ -38,9 +38,11 @@ function generateRandomUserId () {
 };
 
 function emailExisted (email) {
+  //return false if email not exist in database
+  //return the entire user if email exist
   for (let key in users) {
     if (users[key].email === email)
-      return true
+      return users[key];
   }
   return false;
 }
@@ -138,10 +140,34 @@ app.get("/urls.json", (req, res) => {
 });
 
 //--------------LOG IN - LOG OUT - REGISTRATION---------------
-app.post("/login", (req, res) => {
-  //res.cookie('email', req.body.email);
-  res.redirect('/urls');
+app.get("/login", (req, res) => {
+  templateVars = {
+    user: req.cookies['user']
+  };
+
+  res.render('login', templateVars);
 });
+
+// app.post("/login", (req, res) => {
+//   const email = req.body.email;
+//   const password = req.body.password;
+
+//   if (!email || !password) {
+//     res.status(400).send('Email and Password cannot be blank!');
+//   } else {
+//     const user = emailExisted(email);
+//     if (!user) {
+//       //wrong email
+//       res.status(401).send('401: There is no account registered with this email!');
+//     } else if (user.password !== password) {
+//         res.status(401).send('401: Email is correct but wrong password!');
+//     } else {
+//         res.cookie('user', user);
+//     }
+//   }
+//   //res.cookie('email', req.body.email);
+//   res.redirect('/urls');
+// });
 
 app.post("/logout", (req, res) => {
   res.clearCookie('user');

@@ -24,15 +24,11 @@
         <button type="submit" class="btn btn-outline-dark">Logout</button>
       </form>
     <%} else { %>
-      <form method="POST" action="/login" class="form-inline">
-        <input
-          class="form-control"
-          type="text"
-          name="email"
-          placeholder="Email"
-          style="width: 200px; margin: 1em"
-        />
+      <form method="GET" action="/login" class="form-inline">
         <button type="submit" class="btn btn-outline-dark">Login</button>
+      </form>
+      <form method="GET" action="/register" class="form-inline">
+        <button type="submit" class="btn btn-outline-dark">Register</button>
       </form>
     <% }%>
     
