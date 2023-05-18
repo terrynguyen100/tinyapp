@@ -28,3 +28,6 @@ Math.random().toString(36).substring(2,5);
 req.cookies.userId => req.session.userId
 res.cookie('userId', 'abc') => req.session.userId = 'abc'
 res.clearCOokie('userId') => req.session = null
+
+//CURL
+curl -X POST -i example.com --cookie "user_id=20126"

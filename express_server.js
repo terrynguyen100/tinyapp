@@ -1,15 +1,18 @@
 const express = require('express');
 const app = express();
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const PORT = 8080;
 
 //---------MIDDLEWARE--------
 app.set('view engine', 'ejs');
-app.use(cookieParser());
 app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: false })); //extended = true means the cookies can send higher form of variables, instead of just literals
+app.use(cookieSession({
+  name: 'notMyCookie',
+  keys: ['SuP3r$ecr3tC0dE!']
+}));
 
 //----------FUNCTION--------
 //return a random ${length} chars string (number and/or letter)
@@ -95,17 +98,16 @@ const users = {
 //------------------ROUTE HANDLER------------------
 
 app.get('/', (req, res) => {
-  const userId = req.cookies['userId'];
+  const userId = req.session['userId'];
   if (userId && users.userId) {
     res.redirect('/urls');
-  } 
-  else {
+  } else {
     res.redirect('/login');
   }
 });
 
 app.get('/urls', (req, res) => {
-  const userId = req.cookies['userId'];
+  const userId = req.session['userId'];
 
   // if (!users[userId]) {
   //   console.log('this userId in cookie does not exist in database. Proceed to clear cookie');
@@ -116,7 +118,7 @@ app.get('/urls', (req, res) => {
   if (userId && users[userId]) {
     const templateVars = {
       urls: urlsForUser(userId), //filter only the urls belong to this cookies[userId]
-      user: users[req.cookies['userId']]
+      user: users[req.session['userId']]
     };
     res.render('urls_index', templateVars);
   } else {
@@ -125,19 +127,19 @@ app.get('/urls', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
-  const userId = req.cookies['userId'];
+  const userId = req.session['userId'];
   
   //check for log in status
-  if (!userId) { 
+  if (!userId) {
     return res.send('User is NOT logged in. Unable to add new URL');
   }
   //check for empty longURL
-  if (!req.body.longURL) { 
+  if (!req.body.longURL) {
     return res.status(400).send('URL cannot be empty');
   }
-    //checks if longURL already exist
+  //checks if longURL already exist
   const longURL = req.body.longURL.trim(); //without trimming, same url with extra spaces are considered as equivalent
-  if (longURLExisted(longURL)) { 
+  if (longURLExisted(longURL)) {
     return res.send('Link already exist in database.');
   }
   //add new link to urlDatabase
@@ -152,7 +154,7 @@ app.post('/urls', (req, res) => {
 
 //urls/new needs to be before urls/:id. Otherwise 'new' will be mistook as :id
 app.get('/urls/new', (req, res) => {
-  const userId = req.cookies['userId'];
+  const userId = req.session['userId'];
 
   // if (!users[userId]) {
   //   console.log('this userId in cookie does not exist in database. Proceed to clear cookie');
@@ -163,53 +165,52 @@ app.get('/urls/new', (req, res) => {
   if (userId && users[userId]) {
     const templateVars = {user: users[userId]};
     return res.render('urls_new', templateVars);
-  } 
-  else {
+  } else {
     return res.redirect('/login');
   }
 });
 
 app.get('/urls/:id', (req, res) => {
-  const userId = req.cookies['userId'];
+  const userId = req.session['userId'];
   const urlId = req.params.id;
 
   //check if user is logged in
-  if (!userId) { 
+  if (!userId) {
     return res.send('You are NOT logged in');
   }
   //check if entered URL already in database
   if (!urlDatabase[urlId]) {
     return res.send('URL does not exist in the database');
-  } 
+  }
   //check if logged user is author of this url
-  if (urlDatabase[urlId].userId !== userId) { 
+  if (urlDatabase[urlId].userId !== userId) {
     return res.send('You are logged in, but NOT authorized to VIEW this URL.');
-  } 
+  }
   //passed all checks, show the specific link
   const templateVars = {
     id: urlId,
     longURL: urlDatabase[urlId].longURL,
-    user: users[req.cookies['userId']]
+    user: users[req.session['userId']]
   };
   res.render('urls_show', templateVars);
 });
 
 //DELETE an URL
 app.post('/urls/:id/delete', (req, res) => {
-  const userId = req.cookies['userId'];
+  const userId = req.session['userId'];
   const urlId = req.params.id;
   //check if passed urlId exist in database
   if (!urlDatabase[urlId]) {
     return res.send(`/urls/${urlId} does not exist.`);
-  } 
+  }
   //check if user logged in
-  if (!userId) { 
+  if (!userId) {
     return res.send('You are NOT logged in to DELETE this URL');
-  } 
+  }
   //if user logged in, check if user is the author
-  if (urlDatabase[urlId].userId !== userId) { 
+  if (urlDatabase[urlId].userId !== userId) {
     return res.send('You are logged in, but NOT authorized to DELETE this URL.');
-  } 
+  }
   //passed all checked, proceed to delete url record
   const id = req.params.id;
   delete urlDatabase[id];
@@ -218,24 +219,24 @@ app.post('/urls/:id/delete', (req, res) => {
 
 //UPDATE an URL
 app.post('/urls/:id', (req, res) => {
-  const userId = req.cookies['userId'];
+  const userId = req.session['userId'];
   const urlId = req.params.id;
   const longURL = req.body.longURL;
 
   //check if the input url is empty. Can be replaced by 'required' in HTML
   if (!longURL) {
     return res.status(400).send('URL cannot be empty');
-  } 
+  }
   //check if passed urlId existed in database
   if (!urlDatabase[urlId]) {
     return res.send(`/urls/${urlId} does not exist.`);
-  } 
+  }
   //check if user logged in
-  if (!userId) { 
+  if (!userId) {
     return res.send('You are NOT logged in to UPDATE this URL');
-  } 
+  }
   //if user logged in, check if user is the author
-  if (urlDatabase[urlId].userId !== userId) { 
+  if (urlDatabase[urlId].userId !== userId) {
     return res.send('You are logged in, but NOT authorized to UPDATE this URL.');
   }
   //passed all checked, proceed to update url record
@@ -256,12 +257,12 @@ app.get('/u/:id', (req, res) => {
 //--------------LOG IN - LOG OUT - REGISTRATION---------------
 //LOGIN
 app.get('/login', (req, res) => {
-  const userId = req.cookies['userId'];
+  const userId = req.session['userId'];
 
   //check if user logged in
-  if (userId) { 
+  if (userId) {
     return res.redirect('/urls');
-  } 
+  }
   const templateVars = {user: users[userId]};
   return res.render('login', templateVars);
 });
@@ -273,7 +274,7 @@ app.post('/login', (req, res) => {
   //check if email || password is blank
   if (!email || !password) {
     return res.status(400).send('Email and Password cannot be blank!');
-  } 
+  }
   //check if email existed in database
   const user = emailExisted(email);
   if (!user) {
@@ -284,17 +285,17 @@ app.post('/login', (req, res) => {
     return res.status(403).send('403: Email is correct but password do not match');
   }
   //passed all checks, login
-  res.cookie('userId', user['userId']);
+  req.session['userId'] = user['userId'];
+  //res.cookie('userId', user['userId']);
   res.redirect('/urls');
 });
 
 //REGISTER
 app.get('/register', (req, res) => {
-  const userId = req.cookies['userId'];
+  const userId = req.session['userId'];
   if (userId) {
     return res.redirect('/urls');
-  } 
-  else {
+  } else {
     const templateVars = {user: users[userId]};
     res.render('register', templateVars);
   }
@@ -311,7 +312,7 @@ app.post('/register', (req, res) => {
   //check if email already existed in database
   if (emailExisted(email)) {
     return res.status(400).send('This email already used before.');
-  } 
+  }
   const userId = randomizeUniqueUserId();
   const hashedPass = bcrypt.hashSync(password, 10);
   users[userId] = {
@@ -320,13 +321,15 @@ app.post('/register', (req, res) => {
     password: hashedPass
   };
   console.log('Added new user: ', users);
-  res.cookie('userId', userId);
+  req.session['userId'] = userId;
+  // res.cookie('userId', userId);
   res.redirect('/urls');
 });
 
 //LOGOUT
 app.post('/logout', (req, res) => {
-  res.clearCookie('userId');
+  // res.clearCookie('userId');
+  req.session = null;
   res.redirect('/login');
 });
 
