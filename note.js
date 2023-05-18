@@ -20,3 +20,11 @@ if (req.cookies.userId)
 
 //clear cookie
 res.clearCookie('userId');
+
+//generate random string with number and char (only lower case)
+Math.random().toString(36).substring(2,5);
+
+//get rid of cookie parser and switch to cookieSession
+req.cookies.userId => req.session.userId
+res.cookie('userId', 'abc') => req.session.userId = 'abc'
+res.clearCOokie('userId') => req.session = null
