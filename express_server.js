@@ -5,6 +5,15 @@ const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const PORT = 8080;
 
+//------FUNCTION-----
+const {
+  emailExisted,
+  urlsForUser,
+  longURLExisted,
+  randomizeUniqueUserId,
+  randomizeUniqueShortURL,
+  } = require ('./helpers');
+
 //---------MIDDLEWARE--------
 app.set('view engine', 'ejs');
 app.use(morgan('dev'));
@@ -14,56 +23,6 @@ app.use(cookieSession({
   keys: ['SuP3r$ecr3tC0dE!']
 }));
 
-//----------FUNCTION--------
-//return a random ${length} chars string (number and/or letter)
-function generateRandomStr(length) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let randomStr = '';
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    randomStr += characters.charAt(randomIndex);
-  }
-  return randomStr;
-}
-function randomizeUniqueShortURL() {
-  let shortURL = '';
-  while (urlDatabase[shortURL] || shortURL === '') {
-    shortURL = generateRandomStr(6);
-  }
-  return shortURL;
-}
-function randomizeUniqueUserId() {
-  let userId = '';
-  while (users[userId] || userId === '') {
-    userId = generateRandomStr(3);
-  }
-  return userId;
-}
-function emailExisted(email) {
-  //return false if email not exist in database
-  //return the entire user if email exist
-  for (let key in users) {
-    if (users[key].email === email)
-      return users[key];
-  }
-  return false;
-}
-function longURLExisted(longURL) {
-  for (let key in urlDatabase) {
-    if (urlDatabase[key].longURL === longURL)
-      return true;
-  }
-  return false;
-}
-function urlsForUser(id) {
-  const filteredURLs = {};
-  for (let key in urlDatabase) {
-    if (urlDatabase[key].userId === id) {
-      filteredURLs[key] = urlDatabase[key];
-    }
-  }
-  return filteredURLs;
-}
 
 //--------DATABASE----------------
 
@@ -117,7 +76,7 @@ app.get('/urls', (req, res) => {
 
   if (userId && users[userId]) {
     const templateVars = {
-      urls: urlsForUser(userId), //filter only the urls belong to this cookies[userId]
+      urls: urlsForUser(userId, urlDatabase), //filter only the urls belong to this cookies[userId]
       user: users[req.session['userId']]
     };
     res.render('urls_index', templateVars);
@@ -139,16 +98,15 @@ app.post('/urls', (req, res) => {
   }
   //checks if longURL already exist
   const longURL = req.body.longURL.trim(); //without trimming, same url with extra spaces are considered as equivalent
-  if (longURLExisted(longURL)) {
+  if (longURLExisted(longURL, urlDatabase)) {
     return res.send('Link already exist in database.');
   }
   //add new link to urlDatabase
-  const id = randomizeUniqueShortURL();
+  const id = randomizeUniqueShortURL(urlDatabase);
   urlDatabase[id] = {
     longURL: longURL,
     userId: userId
   };
-  console.log(urlDatabase[id]);
   return res.redirect(`urls/${id}`);
 });
 
@@ -276,7 +234,7 @@ app.post('/login', (req, res) => {
     return res.status(400).send('Email and Password cannot be blank!');
   }
   //check if email existed in database
-  const user = emailExisted(email);
+  const user = emailExisted(email, users);
   if (!user) {
     return res.status(403).send('403: There is no account registered with this email!');
   }
@@ -310,17 +268,16 @@ app.post('/register', (req, res) => {
     return res.status(400).send('Email and Password cannot be blank!');
   }
   //check if email already existed in database
-  if (emailExisted(email)) {
+  if (emailExisted(email, users)) {
     return res.status(400).send('This email already used before.');
   }
-  const userId = randomizeUniqueUserId();
+  const userId = randomizeUniqueUserId(users);
   const hashedPass = bcrypt.hashSync(password, 10);
   users[userId] = {
     userId: userId,
     email: email,
     password: hashedPass
   };
-  console.log('Added new user: ', users);
   req.session['userId'] = userId;
   // res.cookie('userId', userId);
   res.redirect('/urls');
