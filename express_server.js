@@ -37,6 +37,14 @@ function generateRandomUserId () {
   return userId; 
 };
 
+function emailExisted (email) {
+  for (let key in users) {
+    if (users[key].email === email)
+      return true
+  }
+  return false;
+}
+
 //--------DATABASE----------------
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -152,19 +160,19 @@ app.post( "/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  if (email && password) {
-    const userId = generateRandomUserId();
-    users[userId] = {
-      id: userId,
-      email: email,
-      password: password
-    }
-    res.cookie('user', users[userId]);
-  
-    res.redirect("/urls");
+  if (!email || !password) {
+      res.status(400).send('Email and Password cannot be blank!');
+  } else if (emailExisted(email)){
+      res.status(400).send('This email already used before.');
   } else {
-    console.log("Provide email and password!")
-    //QUESTION: what to put here to not refresh the page and not redirect
+      const userId = generateRandomUserId();
+      users[userId] = {
+        id: userId,
+        email: email,
+        password: password
+      }
+      res.cookie('user', users[userId]);
+      res.redirect("/urls");
   }
 });
 
