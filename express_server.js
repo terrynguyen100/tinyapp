@@ -17,7 +17,7 @@ const {
 //---------MIDDLEWARE--------
 app.set('view engine', 'ejs');
 app.use(morgan('dev'));
-app.use(express.urlencoded({ extended: false })); 
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieSession({
   name: 'notMyCookie',
   keys: ['SuP3r$ecr3tC0dE!']
@@ -30,14 +30,20 @@ const urlDatabase = {
   'b2xVn2': {
     longURL: 'https://www.tsn.ca',
     userId: 'aaa',
+    createdDate: "1999-19-01",
+    visitNumber: 0
   },
   'f98k4g': {
     longURL: 'https://www.apple.com',
     userId: 'aaa',
+    createdDate: "1999-19-01",
+    visitNumber: 0
   },
   '9sm5xK': {
     longURL: 'https://www.google.ca',
-    userId: 'bbb'
+    userId: 'bbb',
+    createdDate: "1999-19-01",
+    visitNumber: 0
   },
 };
 
@@ -91,15 +97,17 @@ app.post('/urls', (req, res) => {
   }
   //checks if longURL already exist
   //without trimming, same url with extra spaces are considered as equivalent
-  const longURL = req.body.longURL.trim(); 
-  if (longURLExisted(longURL, urlDatabase)) {
-    return res.send('Link already exist in database.');
+  const longURL = req.body.longURL.trim();
+  if (longURLExisted(longURL, urlsForUser(userId, urlDatabase))) {
+    return res.send('Link already exist in your database.');
   }
   //add new link to urlDatabase
   const id = randomizeUniqueShortURL(urlDatabase);
   urlDatabase[id] = {
     longURL: longURL,
-    userId: userId
+    userId: userId,
+    createdDate: new Date().toJSON().slice(0, 10),
+    visitNumber: 0
   };
   return res.redirect(`urls/${id}`);
 });
@@ -136,7 +144,9 @@ app.get('/urls/:id', (req, res) => {
   const templateVars = {
     id: urlId,
     longURL: urlDatabase[urlId].longURL,
-    user: users[req.session['userId']]
+    createdDate: urlDatabase[urlId].createdDate,
+    visitNumber: urlDatabase[urlId].visitNumber,
+    user: users[userId]
   };
   res.render('urls_show', templateVars);
 });
@@ -167,7 +177,7 @@ app.post('/urls/:id/delete', (req, res) => {
 app.post('/urls/:id', (req, res) => {
   const userId = req.session['userId'];
   const urlId = req.params.id;
-  const longURL = req.body.longURL;
+  const longURL = req.body.longURL.trim();
 
   //check if the input url is empty. Can be replaced by 'required' in HTML
   if (!longURL) {
@@ -185,6 +195,10 @@ app.post('/urls/:id', (req, res) => {
   if (urlDatabase[urlId].userId !== userId) {
     return res.send('You are logged in, but NOT authorized to UPDATE this URL.');
   }
+  //check if the input link already exist in this user's database
+  if (longURLExisted(longURL, urlsForUser(userId, urlDatabase))) {
+    return res.send('Link already exist in your database.');
+  }
   //passed all checked, proceed to update url record
   urlDatabase[urlId].longURL = longURL;
   res.redirect('/urls');
@@ -192,8 +206,12 @@ app.post('/urls/:id', (req, res) => {
 
 //Redirecting to the long URL
 app.get('/u/:id', (req, res) => {
-  const longURL = urlDatabase[req.params.id].longURL;
+  let longURL = urlDatabase[req.params.id].longURL;
+  if (!longURL.startsWith('http'))
+    longURL = 'http://' + longURL;
+
   if (longURL) {
+    urlDatabase[req.params.id].visitNumber++;
     return res.redirect(longURL);
   } else {
     return res.send('This URL does not exist in the database');

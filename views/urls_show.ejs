@@ -20,7 +20,8 @@
         <p class="card-text">
           Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
         </p>
-        
+        <p class="card-text"> Created Date: <%= createdDate %> </p>
+        <p class="card-text"> Number of Visits: <%= visitNumber %> </p>
       </div>
       <div class="card-footer text-muted text-center">
         <h3>Edit</h3>
@@ -32,7 +33,6 @@
               name="longURL"
               value="<%= longURL %>"
               style="width: 300px; margin: 1em"
-              
             />
             <button type="submit" class="btn btn-primary">Update</button>
           </div>
