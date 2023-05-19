@@ -60,6 +60,13 @@ const users = {
   },
 };
 
+const errors = {
+  a401: { errorCode: 401, errorMessage: 'Unauthorized. User is not logged in.'},
+  a404: { errorCode: 404, errorMessage: 'This URL is not in your collection'},
+  b404: { errorCode: 404, errorMessage: 'This short URL is invalid'},
+}
+
+let currentError = null;
 //------------------ROUTE HANDLER------------------
 
 app.get('/', (req, res) => {
@@ -80,7 +87,8 @@ app.get('/urls', (req, res) => {
     };
     res.render('urls_index', templateVars);
   } else {
-    res.send('User is NOT logged in to view the /urls');
+    currentError = 'a401';
+    return res.redirect('/error');
   }
 });
 
@@ -89,17 +97,17 @@ app.post('/urls', (req, res) => {
   
   //check for log in status
   if (!userId) {
-    return res.send('User is NOT logged in. Unable to add new URL');
+    return res.status(401).send('User is not logged in.')
   }
   //check for empty longURL
   if (!req.body.longURL) {
-    return res.status(400).send('URL cannot be empty');
+    return res.status(400).send('URL cannot be empty.');
   }
   //checks if longURL already exist
   //without trimming, same url with extra spaces are considered as equivalent
   const longURL = req.body.longURL.trim();
   if (longURLExisted(longURL, urlsForUser(userId, urlDatabase))) {
-    return res.send('Link already exist in your database.');
+    return res.send('This URL is already in your collection.');
   }
   //add new link to urlDatabase
   const id = randomizeUniqueShortURL(urlDatabase);
@@ -130,15 +138,18 @@ app.get('/urls/:id', (req, res) => {
 
   //check if user is logged in
   if (!userId) {
-    return res.send('You are NOT logged in');
+    currentError = 'a401';
+    return res.redirect('/error');
   }
   //check if entered URL already in database
   if (!urlDatabase[urlId]) {
-    return res.send('URL does not exist in the database');
+    currentError = 'a404';
+    return res.redirect('/error');
   }
   //check if logged user is author of this url
   if (urlDatabase[urlId].userId !== userId) {
-    return res.send('You are logged in, but NOT authorized to VIEW this URL.');
+    currentError = 'a404';
+    return res.redirect('/error');
   }
   //passed all checks, show the specific link
   const templateVars = {
@@ -157,15 +168,15 @@ app.post('/urls/:id/delete', (req, res) => {
   const urlId = req.params.id;
   //check if passed urlId exist in database
   if (!urlDatabase[urlId]) {
-    return res.send(`/urls/${urlId} does not exist.`);
+    return res.send(`The URL is not in your collection.`);
   }
   //check if user logged in
   if (!userId) {
-    return res.send('You are NOT logged in to DELETE this URL');
+    return res.send('You are not logged in to perform this Delete.');
   }
   //if user logged in, check if user is the author
   if (urlDatabase[urlId].userId !== userId) {
-    return res.send('You are logged in, but NOT authorized to DELETE this URL.');
+    return res.send('You are logged in, but NOT authorized to delete this URL.');
   }
   //passed all checked, proceed to delete url record
   const id = req.params.id;
@@ -181,23 +192,23 @@ app.post('/urls/:id', (req, res) => {
 
   //check if the input url is empty. Can be replaced by 'required' in HTML
   if (!longURL) {
-    return res.status(400).send('URL cannot be empty');
+    return res.status(400).send('The URL cannot be empty.');
   }
   //check if passed urlId existed in database
   if (!urlDatabase[urlId]) {
-    return res.send(`/urls/${urlId} does not exist.`);
+    return res.send(`The URL is not in your collection.`);
   }
   //check if user logged in
   if (!userId) {
-    return res.send('You are NOT logged in to UPDATE this URL');
+    return res.send('You are not logged in to perform this Update.');
   }
   //if user logged in, check if user is the author
   if (urlDatabase[urlId].userId !== userId) {
-    return res.send('You are logged in, but NOT authorized to UPDATE this URL.');
+    return res.send('You are logged in, but NOT authorized to update this URL.');
   }
   //check if the input link already exist in this user's database
   if (longURLExisted(longURL, urlsForUser(userId, urlDatabase))) {
-    return res.send('Link already exist in your database.');
+    return res.send('This URL is already in your database.');
   }
   //passed all checked, proceed to update url record
   urlDatabase[urlId].longURL = longURL;
@@ -206,16 +217,15 @@ app.post('/urls/:id', (req, res) => {
 
 //Redirecting to the long URL
 app.get('/u/:id', (req, res) => {
-  let longURL = urlDatabase[req.params.id].longURL;
-  if (!longURL.startsWith('http'))
-    longURL = 'http://' + longURL;
-
-  if (longURL) {
-    urlDatabase[req.params.id].visitNumber++;
-    return res.redirect(longURL);
-  } else {
-    return res.send('This URL does not exist in the database');
+  const urlID = req.params.id;
+  if (urlDatabase[urlID] == undefined) {
+    currentError = 'b404';
+    return res.redirect('/error');
   }
+
+  let longURL = urlDatabase[req.params.id].longURL;
+  urlDatabase[req.params.id].visitNumber++;
+  return res.redirect(longURL);
 });
 
 //--------------LOG IN - LOG OUT - REGISTRATION---------------
@@ -237,12 +247,12 @@ app.post('/login', (req, res) => {
   
   //check if email || password is blank
   if (!email || !password) {
-    return res.status(400).send('Email and Password cannot be blank!');
+    return res.status(400).send('Email and Password cannot be empty.');
   }
   //check if email existed in database
   const user = emailExisted(email, users);
   if (!user) {
-    return res.status(403).send('403: There is no account registered with this email!');
+    return res.status(403).send('403: There is no account registered with this email.');
   }
   //check if password matchs
   if (!bcrypt.compareSync(password, user.password)) {
@@ -271,11 +281,11 @@ app.post('/register', (req, res) => {
 
   //check if email || password is blank
   if (!email || !password) {
-    return res.status(400).send('Email and Password cannot be blank!');
+    return res.status(400).send('Email and Password cannot be empty.');
   }
   //check if email already existed in database
   if (emailExisted(email, users)) {
-    return res.status(400).send('This email already used before.');
+    return res.status(400).send('This email is already associated with another account.');
   }
   const userId = randomizeUniqueUserId(users);
   const hashedPass = bcrypt.hashSync(password, 10);
@@ -291,9 +301,17 @@ app.post('/register', (req, res) => {
 
 //LOGOUT
 app.post('/logout', (req, res) => {
-  // res.clearCookie('userId');
   req.session = null;
   res.redirect('/login');
+});
+
+//ERROR
+app.get('/error', (req, res) => {
+  const templateVars = {
+    errorCode: errors[currentError].errorCode,
+    errorMessage: errors[currentError].errorMessage
+  }
+  res.render('error', templateVars);
 });
 
 //LISTENING
