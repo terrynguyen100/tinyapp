@@ -5,7 +5,9 @@ TinyApp is a full stack web application built with Node.js and Express that allo
 ## Final Product
 
 !["Screenshot of Registration Page"](https://github.com/terrynguyen100/tinyapp/blob/ed0846cf7fcc1193751836564dad8aa725eb117b/docs/Screenshot%20of%20register%20page.jpg)
+
 !["screenshot of New URL Page"](https://github.com/terrynguyen100/tinyapp/blob/ed0846cf7fcc1193751836564dad8aa725eb117b/docs/Screenshot%20of%20new%20url%20page.jpg)
+
 !["screenshot of URLs Page"](https://github.com/terrynguyen100/tinyapp/blob/ed0846cf7fcc1193751836564dad8aa725eb117b/docs/Screenshot%20of%20urls%20page.jpg)
 
 ## Dependencies
@@ -27,6 +29,7 @@ TinyApp is a full stack web application built with Node.js and Express that allo
 ## How To Use TinyApp
 
 #### Register/Login
+
 Users must be logged in to create new short links, view and edit them.
 
 To register, click Register at the top right, enter your email and password.
